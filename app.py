@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+import joblib
 
 
 st.title('US State Fair Rainfall Simulation')
@@ -14,6 +15,17 @@ MN_df_scaled = pd.read_csv("MN_df_scaled.csv")
 TX_df_scaled = pd.read_csv("TX_df_scaled.csv")
 NC_df_scaled = pd.read_csv("NC_df_scaled.csv")
 NY_df_scaled = pd.read_csv("NY_df_scaled.csv")
+
+# load scalers
+NC_scaler_prec = joblib.load("NC_scaler_prec.save") 
+NY_scaler_prec = joblib.load("NY_scaler_prec.save") 
+TX_scaler_prec = joblib.load("TX_scaler_prec.save") 
+MN_scaler_prec = joblib.load("MN_scaler_prec.save") 
+
+scalers_dict = {'New York':NY_scaler_prec,
+'North Carolina':NC_scaler_prec,
+'Texas':TX_scaler_prec,
+'Minnesota':MN_scaler_prec}
 
 # create functions
 
@@ -29,22 +41,24 @@ def fit_curve(state_df):
     p,a = zip(*sorted(zip(x, func(x, *popt))))
     return popt
 
-def adjust_vendor_revenue(df,precipitation, gross_revenue, popt):
+def adjust_vendor_revenue(df,precipitation, gross_revenue, popt, scaler_prec):
     # gross revenue per day
     # optimised_curve_fit
     # how many more or less people than average, assuming an average attendance gives the same revenue
 
-    scaled_avg_attendance = df['scaled_att'].mean()
-    y_pred = func(precipitation, popt[0],popt[1],popt[2]) #returns scaled attendance
-    sf = (y_pred-scaled_avg_attendance)/scaled_avg_attendance
+    #scaled_avg_attendance = df['scaled_att'].mean()
+    
+    scaled_prec = scaler_prec.transform(np.array(precipitation).reshape(-1, 1))
+    no_rain_att =  func(0, popt[0],popt[1],popt[2]) #returns scaled attendance no rain
+    y_pred = func(scaled_prec[0,0], popt[0],popt[1],popt[2]) #returns scaled attendance with rain
+    sf = (y_pred)/no_rain_att
 
-    new_revenue = sf*gross_revenue+gross_revenue
+    new_revenue = sf*gross_revenue
 
     return (new_revenue)
 
-def rainfall_profit(df_scaled, popt, rainfall, revenue, percent_commission=0.15, percent_sales_tax=0.0738,percent_admission=0.02, percent_labour=0.18, percent_food=0.25, percent_income_tax = 0.12, extra_costs=0, fair_length=13):
-    daily_revenue = revenue/fair_length
-    adjusted_rev = adjust_vendor_revenue(df_scaled, rainfall,revenue, popt)/fair_length
+def rainfall_profit(df_scaled, popt, rainfall, scaler_prec, daily_revenue, percent_commission=0.15, percent_sales_tax=0.0738,percent_admission=0.02, percent_labour=0.18, percent_food=0.25, percent_income_tax = 0.12, extra_costs=0):
+    adjusted_rev = adjust_vendor_revenue(df_scaled, rainfall,daily_revenue, popt, scaler_prec)
     commission = percent_commission*adjusted_rev
     sales_tax = percent_sales_tax*adjusted_rev
 
@@ -61,30 +75,38 @@ def rainfall_profit(df_scaled, popt, rainfall, revenue, percent_commission=0.15,
     net_profit = pre_tax_profit - income_tax
     return net_profit
 
-def total_profit_fair(df_scaled, popt, total_revenue, prec_list, extra_costs=0):
+def total_profit_fair(df_scaled, popt, scaler_prec, total_revenue, prec_list, extra_costs=0):
     profit_list = []
+    daily_revenue = total_revenue/len(prec_list)
     for prec in prec_list:
-        profit_list.append(rainfall_profit(df_scaled, popt,prec,total_revenue, extra_costs=0, fair_length=len(prec_list)))
+        profit_list.append(rainfall_profit(df_scaled, popt,prec, scaler_prec, daily_revenue, extra_costs=0))
     
+    total_profit = sum(profit_list)
     rainy_days = len([x for x in prec_list if x > 0])
 
     return prec_list, profit_list, rainy_days
 
 
-def total_profit_fair_us(total_revenue, prec_list, extra_costs=0):
+def total_profit_fair_us(total_revenue, scalers_dict, prec_list, extra_costs=0):
     profit_list_MN = []
     profit_list_TX = []
     profit_list_NC = []
     profit_list_NY = []
-
+    daily_revenue = total_revenue/len(prec_list)
     for prec in prec_list:
-        profit_list_MN.append(rainfall_profit(MN_df_scaled, popt_MN,prec,total_revenue, extra_costs=0, fair_length=len(prec_list)))
-        profit_list_TX.append(rainfall_profit(TX_df_scaled, popt_TX,prec,total_revenue, extra_costs=0, fair_length=len(prec_list)))
-        profit_list_NC.append(rainfall_profit(NC_df_scaled, popt_NC,prec,total_revenue, extra_costs=0, fair_length=len(prec_list)))
-        profit_list_NY.append(rainfall_profit(NY_df_scaled, popt_NY,prec,total_revenue, extra_costs=0, fair_length=len(prec_list)))
+        profit_list_MN.append(rainfall_profit(MN_df_scaled, popt_MN,prec, scalers_dict['Minnesota'], daily_revenue, extra_costs=0))
+        profit_list_TX.append(rainfall_profit(TX_df_scaled, popt_TX,prec, scalers_dict['Texas'],daily_revenue, extra_costs=0))
+        profit_list_NC.append(rainfall_profit(NC_df_scaled, popt_NC,prec, scalers_dict['North Carolina'], daily_revenue, extra_costs=0))
+        profit_list_NY.append(rainfall_profit(NY_df_scaled, popt_NY,prec,scalers_dict['New York'], daily_revenue, extra_costs=0))
     
     avg_profit_list = np.average(np.array([profit_list_MN, profit_list_TX, profit_list_NC, profit_list_NY]), axis=0)
+    
+    total_profit_MN = sum(profit_list_MN)
+    total_profit_TX = sum(profit_list_TX)
+    total_profit_NC = sum(profit_list_NC)
+    total_profit_NY = sum(profit_list_NY)
 
+    avg_total_profit = (total_profit_MN + total_profit_TX + total_profit_NC + total_profit_NY)/4
 
     rainy_days = len([x for x in prec_list if x > 0])
 
@@ -157,6 +179,7 @@ def select_state_popt(state):
                 'New York':popt_NY}    
     return state_dict[state]   
 
+
 st.header('Select your variables')   
 
 location = st.selectbox('Choose a location: ', ('Texas', 'Minnesota', 'North Carolina', 'New York', 'US'))
@@ -183,10 +206,10 @@ for day in range(1,days+1):
 
 st.header('Results')
 if location == 'US':
-    prec_list, profit_list, rainy_days = total_profit_fair_us(revenue, prec_list, extra_costs=extra_costs)
+    prec_list, profit_list, rainy_days = total_profit_fair_us(revenue, scalers_dict, prec_list, extra_costs=extra_costs)
 
 else:
-    prec_list, profit_list, rainy_days = total_profit_fair(select_state_df(location), select_state_popt(location), revenue, prec_list, extra_costs=extra_costs)
+    prec_list, profit_list, rainy_days = total_profit_fair(select_state_df(location), select_state_popt(location), scalers_dict[location], revenue, prec_list, extra_costs=extra_costs)
 
 st.write('Chosen location: {}'.format(location))
 output_str = ('Total days: {}'.format(len(prec_list))) + ('  \n Rainy days: {}'.format(rainy_days)) + ('  \n Total Profit: {}'.format(sum(profit_list)))
