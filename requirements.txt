@@ -6,3 +6,4 @@ scipy
 plotly
 joblib
 sklearn==0.0
+joblib==0.13.2
