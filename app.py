@@ -6,6 +6,9 @@ from scipy.optimize import curve_fit
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import joblib
+import sys
+sys.modules['sklearn.externals.joblib'] = joblib
+
 
 
 st.title('US State Fair Rainfall Simulation')
