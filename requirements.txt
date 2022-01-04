@@ -5,4 +5,4 @@ matplotlib
 scipy
 plotly
 joblib
-sklearn
+sklearn==0.0
