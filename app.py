@@ -186,11 +186,11 @@ def select_state_popt(state):
 st.header('Select your variables')   
 
 location = st.selectbox('Choose a location: ', ('Texas', 'Minnesota', 'North Carolina', 'New York', 'US'))
-revenue = st.slider('Choose the total revenue (whole fair): ', min_value=1, max_value=500000, value=70000)
+revenue = st.number_input('Choose the total revenue (whole fair): ', min_value=1, value=50000)
 
 custom_days = st.checkbox('Custom fair duration?')
 if custom_days:
-    days = st.slider('Choose the fair duration (days): ', min_value=1, max_value=25, value=13)
+    days = st.slider('Choose the fair duration (days): ', min_value=1, max_value=30, value=12)
 else:
     days = 12
 
