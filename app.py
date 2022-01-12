@@ -45,11 +45,6 @@ def fit_curve(state_df):
     return popt
 
 def adjust_vendor_revenue(df,precipitation, gross_revenue, popt, scaler_prec):
-    # gross revenue per day
-    # optimised_curve_fit
-    # how many more or less people than average, assuming an average attendance gives the same revenue
-
-    #scaled_avg_attendance = df['scaled_att'].mean()
     
     scaled_prec = scaler_prec.transform(np.array(precipitation).reshape(-1, 1))
     no_rain_att =  func(0, popt[0],popt[1],popt[2]) #returns scaled attendance no rain
@@ -60,7 +55,7 @@ def adjust_vendor_revenue(df,precipitation, gross_revenue, popt, scaler_prec):
 
     return (new_revenue)
 
-def rainfall_profit(df_scaled, popt, rainfall, scaler_prec, daily_revenue, percent_commission=0.15, percent_sales_tax=0.0738,percent_admission=0.02, percent_labour=0.18, percent_food=0.25, percent_income_tax = 0.12, extra_costs=0):
+def rainfall_profit(df_scaled, popt, rainfall, scaler_prec, daily_revenue, percent_commission=0.20, percent_sales_tax=0.0738,percent_admission=0.02, percent_labour=0.18, percent_food=0.25, percent_income_tax = 0.12, extra_costs=0):
     adjusted_rev = adjust_vendor_revenue(df_scaled, rainfall,daily_revenue, popt, scaler_prec)
     commission = percent_commission*adjusted_rev
     sales_tax = percent_sales_tax*adjusted_rev
@@ -78,30 +73,28 @@ def rainfall_profit(df_scaled, popt, rainfall, scaler_prec, daily_revenue, perce
     net_profit = pre_tax_profit - income_tax
     return net_profit
 
-def total_profit_fair(df_scaled, popt, scaler_prec, total_revenue, prec_list, extra_costs=0):
+def total_profit_fair(df_scaled, popt, scaler_prec, total_revenue, prec_list, percent_commission=0.20, percent_sales_tax=0.0738,percent_admission=0.02, percent_labour=0.18, percent_food=0.25, percent_income_tax = 0.12, extra_costs=0):
     profit_list = []
     daily_revenue = total_revenue/len(prec_list)
     for prec in prec_list:
-        profit_list.append(rainfall_profit(df_scaled, popt,prec, scaler_prec, daily_revenue, extra_costs=0))
+        profit_list.append(rainfall_profit(df_scaled, popt,prec, scaler_prec, daily_revenue, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=extra_costs))
     
-    total_profit = sum(profit_list)
     rainy_days = len([x for x in prec_list if x > 0])
 
     return prec_list, profit_list, rainy_days
 
 
-def total_profit_fair_us(total_revenue, scalers_dict, prec_list, extra_costs=0):
+def total_profit_fair_us(total_revenue, scalers_dict, prec_list, percent_commission=0.20, percent_sales_tax=0.0738,percent_admission=0.02, percent_labour=0.18, percent_food=0.25, percent_income_tax = 0.12,extra_costs=0):
     profit_list_MN = []
     profit_list_TX = []
     profit_list_NC = []
     profit_list_NY = []
     daily_revenue = total_revenue/len(prec_list)
     for prec in prec_list:
-        profit_list_MN.append(rainfall_profit(MN_df_scaled, popt_MN,prec, scalers_dict['Minnesota'], daily_revenue, extra_costs=0))
-        profit_list_TX.append(rainfall_profit(TX_df_scaled, popt_TX,prec, scalers_dict['Texas'],daily_revenue, extra_costs=0))
-        profit_list_NC.append(rainfall_profit(NC_df_scaled, popt_NC,prec, scalers_dict['North Carolina'], daily_revenue, extra_costs=0))
-        profit_list_NY.append(rainfall_profit(NY_df_scaled, popt_NY,prec,scalers_dict['New York'], daily_revenue, extra_costs=0))
-    
+        profit_list_MN.append(rainfall_profit(MN_df_scaled, popt_MN,prec, scalers_dict['MN'], daily_revenue, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=0))
+        profit_list_TX.append(rainfall_profit(TX_df_scaled, popt_TX,prec, scalers_dict['TX'],daily_revenue, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=0))
+        profit_list_NC.append(rainfall_profit(NC_df_scaled, popt_NC,prec, scalers_dict['NC'], daily_revenue, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=0))
+        profit_list_NY.append(rainfall_profit(NY_df_scaled, popt_NY,prec,scalers_dict['NY'], daily_revenue, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=0))
     avg_profit_list = np.average(np.array([profit_list_MN, profit_list_TX, profit_list_NC, profit_list_NY]), axis=0)
     
     total_profit_MN = sum(profit_list_MN)
@@ -194,6 +187,22 @@ if custom_days:
 else:
     days = 12
 
+custom_expenses_needed = st.checkbox('Adjust custom expenses?')
+if custom_expenses_needed:
+    percent_commission=st.number_input('Commission', min_value=0, value=0.20, format="%g %")
+    percent_sales_tax=st.number_input('Sales tax', min_value=0, value=0.0738, format="%g %")
+    percent_admission=st.number_input('Admission tickets', min_value=0, value=0.02, format="%g %")
+    percent_labour=st.number_input('Labour costs', min_value=0, value=0.18, format="%g %")
+    percent_food=st.number_input('Food and raw material costs', min_value=0, value=0.25, format="%g %")
+    percent_income_tax = st.number_input('Income tax', min_value=0, value=0.12, format="%g %")
+else:
+    percent_commission=0.20
+    percent_sales_tax=0.0738
+    percent_admission=0.02
+    percent_labour=0.18
+    percent_food=0.25
+    percent_income_tax = 0.12
+    
 extra_costs_needed = st.checkbox('Extra costs?')
 if extra_costs_needed:
     extra_costs = st.number_input('How much paid in extra costs (whole fair)?', min_value=0)
@@ -209,10 +218,10 @@ for day in range(1,days+1):
 
 st.header('Results')
 if location == 'US':
-    prec_list, profit_list, rainy_days = total_profit_fair_us(revenue, scalers_dict, prec_list, extra_costs=extra_costs)
+    prec_list, profit_list, rainy_days = total_profit_fair_us(revenue, scalers_dict, prec_list, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=extra_costs)
 
 else:
-    prec_list, profit_list, rainy_days = total_profit_fair(select_state_df(location), select_state_popt(location), scalers_dict[location], revenue, prec_list, extra_costs=extra_costs)
+    prec_list, profit_list, rainy_days = total_profit_fair(select_state_df(location), select_state_popt(location), scalers_dict[location], revenue, prec_list, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=extra_costs)
 
 st.write('Chosen location: {}'.format(location))
 output_str = ('Total days: {}'.format(len(prec_list))) + ('  \n Rainy days: {}'.format(rainy_days)) + ('  \n Total Profit: {}'.format(sum(profit_list)))
