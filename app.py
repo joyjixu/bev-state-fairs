@@ -189,12 +189,12 @@ else:
 
 custom_expenses_needed = st.checkbox('Adjust custom expenses?')
 if custom_expenses_needed:
-    percent_commission=st.number_input('Commission', min_value=0, value=0.20, format="%g %")
-    percent_sales_tax=st.number_input('Sales tax', min_value=0, value=0.0738, format="%g %")
-    percent_admission=st.number_input('Admission tickets', min_value=0, value=0.02, format="%g %")
-    percent_labour=st.number_input('Labour costs', min_value=0, value=0.18, format="%g %")
-    percent_food=st.number_input('Food and raw material costs', min_value=0, value=0.25, format="%g %")
-    percent_income_tax = st.number_input('Income tax', min_value=0, value=0.12, format="%g %")
+    percent_commission=st.number_input('Commission', min_value=0.0, value=0.20, format="%g %")
+    percent_sales_tax=st.number_input('Sales tax', min_value=0.0, value=0.0738, format="%g %")
+    percent_admission=st.number_input('Admission tickets', min_value=0.0, value=0.02, format="%g %")
+    percent_labour=st.number_input('Labour costs', min_value=0.0, value=0.18, format="%g %")
+    percent_food=st.number_input('Food and raw material costs', min_value=0.0, value=0.25, format="%g %")
+    percent_income_tax = st.number_input('Income tax', min_value=0.0, value=0.12, format="%g %")
 else:
     percent_commission=0.20
     percent_sales_tax=0.0738
