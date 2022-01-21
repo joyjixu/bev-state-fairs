@@ -9,10 +9,6 @@ import joblib
 import sys
 sys.modules['sklearn.externals.joblib'] = joblib
 
-
-
-st.title('US State Fair Rainfall Simulation')
-
 # load dfs
 MN_df_scaled = pd.read_csv("MN_df_scaled.csv")
 TX_df_scaled = pd.read_csv("TX_df_scaled.csv")
@@ -129,7 +125,7 @@ popt_MN = fit_curve(MN_df_scaled)
 popt_NY = fit_curve(NY_df_scaled)
 popt_TX = fit_curve(TX_df_scaled)
 
-# plotting
+# plotting functions
 def plotly_prec_profit(prec_list, profit_list):
 
     fig = make_subplots(rows=2, cols=1,
@@ -160,7 +156,7 @@ def plotly_prec_profit(prec_list, profit_list):
 
     return fig
 
-# UI
+# UI helper functions
 def select_state_df(state):
     state_dict = {'Texas':TX_df_scaled,
                 'Minnesota':MN_df_scaled,
@@ -176,18 +172,23 @@ def select_state_popt(state):
     return state_dict[state]   
 
 
-st.header('Select your variables')   
+# text and display
+st.title('US State Fair Rainfall Simulation 🌧')
+st.write('This is a model that adjusts the revenue of US state fair vendors according to unexpected rainfall, as part of the TKE Consultancy project performed by UCL students for BirdsEyeView Technologies.')
 
-location = st.selectbox('Choose a location: ', ('Texas', 'Minnesota', 'North Carolina', 'New York', 'US'))
-revenue = st.number_input('Choose the total revenue (whole fair): ', min_value=1, value=50000)
+st.header('1. Select your variables 🔧')  
+st.write("Set up the parameters of the model.")
 
-custom_days = st.checkbox('Custom fair duration?')
+location = st.selectbox('Choose a location: ', ('Texas', 'Minnesota', 'North Carolina', 'New York', 'US'),help='Choose a specific state or an average for US-wide predictions.')
+revenue = st.number_input('Choose the total revenue (whole fair): ', min_value=1, value=50000, help="This is the amount of money (USD) the vendor expects to earn over the whole fair duration, under normal weather circumstances.")
+
+custom_days = st.checkbox('Custom fair duration?', help="Check if you would like a different duration than the dataset average.")
 if custom_days:
     days = st.slider('Choose the fair duration (days): ', min_value=1, max_value=30, value=12)
 else:
     days = 12
 
-custom_expenses_needed = st.checkbox('Adjust custom expenses?')
+custom_expenses_needed = st.checkbox('Adjust custom expenses?', help="Check if you would like to change the costs from the preresearched average costs.")
 if custom_expenses_needed:
     percent_commission=st.number_input('Percent commission', min_value=0.0, value=0.20, format="%g")
     percent_sales_tax=st.number_input('Percent sales tax', min_value=0.0, value=0.0738, format="%g")
@@ -203,20 +204,22 @@ else:
     percent_food=0.25
     percent_income_tax = 0.12
     
-extra_costs_needed = st.checkbox('Extra costs?')
+extra_costs_needed = st.checkbox('Extra costs?', help="We assume there are no extra costs to being a vendor, check if you would like to account for a one-off expense (e.g. equipment).")
 if extra_costs_needed:
-    extra_costs = st.number_input('How much paid in extra costs (whole fair)?', min_value=0)
+    extra_costs = st.number_input('How much paid in extra costs (over the whole fair)?', min_value=0)
 else:
     extra_costs = 0
 
-st.subheader('Enter precipitation')
+st.header('2. Enter precipitation 💧')
+st.write("For each day, enter the mm of rainfall.")
 prec_list = []
 for day in range(1,days+1):
     prec_day = st.number_input('Select precipitation for day {} (mm):'.format(day), min_value=0)
     prec_list.append(prec_day)
 
 
-st.header('Results')
+st.header('3. Results 🔍')
+st.write('Predictions for how profit would be affected by rainfall, considering the expenses of the vendor as well.')
 if location == 'US':
     prec_list, profit_list, rainy_days = total_profit_fair_us(revenue, scalers_dict, prec_list, percent_commission=percent_commission, percent_sales_tax=percent_sales_tax,percent_admission=percent_admission, percent_labour=percent_labour, percent_food=percent_food, percent_income_tax = percent_income_tax, extra_costs=extra_costs)
 
@@ -227,14 +230,17 @@ st.write('Chosen location: {}'.format(location))
 output_str = ('Total days: {}'.format(len(prec_list))) + ('  \n Rainy days: {}'.format(rainy_days)) + ('  \n Total Profit: {}'.format(sum(profit_list)))
 st.markdown(output_str)
 
+st.subheader("Precipitation and vendor profit over fair duration")
 st.plotly_chart(plotly_prec_profit(prec_list, profit_list))
 
-st.header('Insurance')
+st.header('4. Insurance 📝')
+st.write("Adding the option to purchase BirdsEyeView's parametric weather risk insurance product, which benefit the vendor in the case where extreme weather causes a drastic loss in profits.")
 
-threshold = st.number_input('Select threshold for payout (mm):', min_value=0)
-payout = st.number_input('Choose payout value (USD):', min_value=0)
-premium = st.number_input('Choose daily premium (USD):', min_value=0)
+threshold = st.number_input('Select threshold for payout (mm):', min_value=0, help="This is the minimum mm of rain that must fall for the payout to be given.")
+payout = st.number_input('Choose payout value (USD):', min_value=0, help="This is how much the vendor will recieve id the threshold is reached.")
+premium = st.number_input('Choose daily premium (USD):', min_value=0, help="This is the cost of purchasing BirdsEyeView's insurance, per day until the end of the fair or the threshold is reached.")
 new_profit_lst = add_insurance(prec_list,profit_list,threshold, payout, premium)
 new_total_profit = sum(new_profit_lst)
 st.markdown('New total profit: {}'.format(new_total_profit))
+st.subheader("Precipitation and vendor profit with insurance over fair duration")
 st.plotly_chart(plotly_prec_profit(prec_list, new_profit_lst))
