@@ -234,7 +234,7 @@ st.subheader("Precipitation and vendor profit over fair duration")
 st.plotly_chart(plotly_prec_profit(prec_list, profit_list))
 
 st.header('4. Insurance 📝')
-st.write("Adding the option to purchase BirdsEyeView's parametric weather risk insurance product, which benefit the vendor in the case where extreme weather causes a drastic loss in profits.")
+st.write("Adding the option to purchase BirdsEyeView's parametric weather risk insurance product, which benefits the vendor in the case where extreme weather causes a drastic loss in profits.")
 
 threshold = st.number_input('Select threshold for payout (mm):', min_value=0, help="This is the minimum mm of rain that must fall for the payout to be given.")
 payout = st.number_input('Choose payout value (USD):', min_value=0, help="This is how much the vendor will recieve id the threshold is reached.")
