@@ -174,7 +174,7 @@ def select_state_popt(state):
 
 # text and display
 st.title('US State Fair Rainfall Simulation 🌧')
-st.write('This is a model that adjusts the revenue of US state fair vendors according to unexpected rainfall, as part of the TKE Consultancy project performed by UCL students for BirdsEyeView Technologies.')
+st.write('This predictive model  adjusts the revenue of US state fair vendors according to unexpected rainfall, as part of the TKE Consultancy project performed by UCL students for BirdsEyeView Technologies.')
 
 st.header('1. Select your variables 🔧')  
 st.write("Set up the parameters of the model.")
@@ -182,13 +182,13 @@ st.write("Set up the parameters of the model.")
 location = st.selectbox('Choose a location: ', ('Texas', 'Minnesota', 'North Carolina', 'New York', 'US'),help='Choose a specific state or an average for US-wide predictions.')
 revenue = st.number_input('Choose the total revenue (whole fair): ', min_value=1, value=50000, help="This is the amount of money (USD) the vendor expects to earn over the whole fair duration, under normal weather circumstances.")
 
-custom_days = st.checkbox('Custom fair duration?', help="Check if you would like a different duration than the dataset average.")
+custom_days = st.checkbox('Custom fair duration?', help="Check if you would like a different duration than the dataset average.(12 days)")
 if custom_days:
     days = st.slider('Choose the fair duration (days): ', min_value=1, max_value=30, value=12)
 else:
     days = 12
 
-custom_expenses_needed = st.checkbox('Adjust custom expenses?', help="Check if you would like to change the costs from the preresearched average costs.")
+custom_expenses_needed = st.checkbox('Adjust custom expenses?', help="Check if you would like to change the expenses of a vendor (e.g. commission) from the average costs based on the literature.")
 if custom_expenses_needed:
     percent_commission=st.number_input('Percent commission', min_value=0.0, value=0.20, format="%g")
     percent_sales_tax=st.number_input('Percent sales tax', min_value=0.0, value=0.0738, format="%g")
@@ -204,9 +204,9 @@ else:
     percent_food=0.25
     percent_income_tax = 0.12
     
-extra_costs_needed = st.checkbox('Extra costs?', help="We assume there are no extra costs to being a vendor, check if you would like to account for a one-off expense (e.g. equipment).")
+extra_costs_needed = st.checkbox('Extra costs?', help="We assume there are no extra costs by default, check if you would like to account for a one-off expense (e.g. equipment).")
 if extra_costs_needed:
-    extra_costs = st.number_input('How much paid in extra costs (over the whole fair)?', min_value=0)
+    extra_costs = st.number_input('How much is paid in extra costs (USD over the whole fair)?', min_value=0)
 else:
     extra_costs = 0
 
@@ -234,7 +234,7 @@ st.subheader("Precipitation and vendor profit over fair duration")
 st.plotly_chart(plotly_prec_profit(prec_list, profit_list))
 
 st.header('4. Insurance 📝')
-st.write("Adding the option to purchase BirdsEyeView's parametric weather risk insurance product, which benefits the vendor in the case where extreme weather causes a drastic loss in profits.")
+st.write("Below, you can add the option of purchasing BirdsEyeView's parametric weather risk insurance product, which benefits the vendor in the case where extreme weather causes a drastic loss in profits.")
 
 threshold = st.number_input('Select threshold for payout (mm):', min_value=0, help="This is the minimum mm of rain that must fall for the payout to be given.")
 payout = st.number_input('Choose payout value (USD):', min_value=0, help="This is how much the vendor will recieve id the threshold is reached.")
